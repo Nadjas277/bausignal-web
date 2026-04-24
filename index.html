@@ -61,7 +61,7 @@
 
   var N        = 58;    // number of tick marks
   var K        = 2.5;   // exponential spread factor (higher = more contrast)
-  var DURATION = 3400;  // ms for one full left-to-right sweep
+  var DURATION = 9000;  // ms for one full left-to-right sweep
   var frac     = 0;     // cursor position 0..1
   var last     = null;
 
@@ -92,15 +92,13 @@
     var cur = frac * W;
     var pos = positions(W);
 
-    var best = 0, bestD = Infinity;
-    for (var i = 0; i < pos.length; i++) {
-      var d = Math.abs(pos[i] - cur);
-      if (d < bestD) { bestD = d; best = i; }
-    }
-
+    var sigma = W * 0.15;
     ctx.clearRect(0, 0, W, H);
     for (var i = 0; i < pos.length; i++) {
-      ctx.fillStyle = (i === best) ? 'rgba(255,255,255,1)' : 'rgba(255,255,255,0.2)';
+      var d   = Math.abs(pos[i] - cur);
+      var t   = d / sigma;
+      var raw = t <= 1 ? 0.5 * (1 + Math.cos(Math.PI * t)) : 0;
+      ctx.fillStyle = 'rgba(255,255,255,' + (0.2 + 0.8 * raw).toFixed(3) + ')';
       var h = (i % 2 === 0) ? H : H / 2;
       var y = (H - h) / 2;
       ctx.fillRect(Math.round(pos[i]) - 1, y, 2, h);
