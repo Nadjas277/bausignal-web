@@ -87,7 +87,7 @@
     ctx.lineWidth = 1;
 
     // Draw each line at 50% max opacity so top of field = 50%
-    ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+    ctx.strokeStyle = 'rgba(255,255,255,1)';
     for (var i = 0; i < lines.length; i++) {
       var ln   = lines[i];
       var sway = ln.sway * Math.sin(2 * Math.PI * t / ln.cycle + ln.phase);
