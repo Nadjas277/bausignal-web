@@ -100,4 +100,54 @@
     </noscript>
   
 
+<script>
+(function () {
+  function init() {
+    var main = document.querySelector('main');
+    if (!main) return;
+
+    var hero = main.querySelector('section');
+    var allSections = Array.from(main.querySelectorAll('section'));
+    var revealSections = allSections.filter(function (s) {
+      return s !== hero && s.id !== 'possibilities';
+    });
+    var cards = Array.from(document.querySelectorAll('#possibilities .grid > div'));
+
+    var sectionTransition = 'opacity 0.7s ease, transform 0.7s ease';
+    var cardTransition    = 'opacity 0.6s ease, transform 0.6s ease';
+
+    revealSections.forEach(function (el) {
+      el.style.opacity    = '0';
+      el.style.transform  = 'translateY(52px)';
+      el.style.transition = sectionTransition;
+    });
+
+    cards.forEach(function (el, i) {
+      el.style.opacity         = '0';
+      el.style.transform       = 'translateX(72px)';
+      el.style.transition      = cardTransition;
+      el.style.transitionDelay = (i * 130) + 'ms';
+    });
+
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        var el = entry.target;
+        el.style.opacity   = '1';
+        el.style.transform = 'none';
+        observer.unobserve(el);
+      });
+    }, { threshold: 0.12 });
+
+    revealSections.forEach(function (el) { observer.observe(el); });
+    cards.forEach(function (el) { observer.observe(el); });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+}());
+</script>
 </body></html>
