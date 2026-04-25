@@ -474,14 +474,12 @@
     ];
     if (icons.some(function (ic) { return !ic; })) return;
 
-    var STROKE_DUR = 400;
-    var STAGGER    = 150;
-    var PAUSE      = 800;
-    var FADE_OUT   = 300;
-    var CARD_GAP   = 300;
-    var INIT_DELAY = 500;
+    var STROKE_DUR  = 400;  // ms per stroke
+    var STAGGER     = 150;  // ms between strokes within one icon
+    var BETWEEN     = 500;  // ms pause between icons
+    var END_PAUSE   = 800;  // ms pause after DATA before restarting
 
-    // Pre-measure and hide all lines; store length on element for reliable reset
+    // Pre-measure all strokes; store length for reliable reset
     var iconData = icons.map(function (svg) {
       var lines = Array.from(svg.querySelectorAll('line, path'));
       lines.forEach(function (el) {
@@ -494,38 +492,50 @@
       return { svg: svg, lines: lines };
     });
 
-    function loopIcon(data, startDelay) {
-      var svg          = data.svg;
-      var lines        = data.lines;
-      var drawDuration = (lines.length - 1) * STAGGER + STROKE_DUR;
+    // Returns a Promise that resolves after `ms` milliseconds
+    function wait(ms) {
+      return new Promise(function (resolve) { setTimeout(resolve, ms); });
+    }
 
-      setTimeout(function () {
-        // Snap back to fully visible, reset all strokes instantly
-        svg.style.transition = 'none';
-        svg.style.opacity    = '1';
-        lines.forEach(function (el) {
-          el.style.transition       = 'none';
-          el.style.strokeDashoffset = el._dashLen;
-        });
+    // Instantly resets one icon to fully hidden (no transition)
+    function resetIcon(data) {
+      data.svg.style.transition = 'none';
+      data.svg.style.opacity    = '1';
+      data.lines.forEach(function (el) {
+        el.style.transition       = 'none';
+        el.style.strokeDashoffset = el._dashLen;
+      });
+    }
 
-        // Draw strokes one by one
-        lines.forEach(function (el, i) {
+    // Draws one icon stroke-by-stroke; returns a Promise that resolves when done
+    function drawIcon(data) {
+      return new Promise(function (resolve) {
+        data.lines.forEach(function (el, i) {
           setTimeout(function () {
             el.style.transition       = 'stroke-dashoffset ' + STROKE_DUR + 'ms ease-in-out';
             el.style.strokeDashoffset = '0';
           }, i * STAGGER);
         });
+        var totalDur = (data.lines.length - 1) * STAGGER + STROKE_DUR;
+        setTimeout(resolve, totalDur);
+      });
+    }
 
-        // After all strokes finish: pause → fade out → loop
-        setTimeout(function () {
-          setTimeout(function () {
-            svg.style.transition = 'opacity ' + FADE_OUT + 'ms ease-in-out';
-            svg.style.opacity    = '0';
-            setTimeout(function () { loopIcon(data, 0); }, FADE_OUT);
-          }, PAUSE);
-        }, drawDuration);
-
-      }, startDelay);
+    // Runs the full sequence (CORE → COMPLIANCE → DATA) then loops forever
+    function runSequence() {
+      var chain = Promise.resolve();
+      iconData.forEach(function (data, i) {
+        chain = chain
+          .then(function () {
+            resetIcon(data);           // snap this icon to blank
+            return drawIcon(data);     // draw it stroke by stroke
+          })
+          .then(function () {
+            var pause = (i < iconData.length - 1) ? BETWEEN : END_PAUSE;
+            return wait(pause);        // pause before next icon (or before restart)
+          });
+      });
+      chain.then(runSequence);         // loop forever
     }
 
     var fired = false;
@@ -533,13 +543,7 @@
       if (!entries[0].isIntersecting || fired) return;
       fired = true;
       observer.disconnect();
-
-      // First appearance: stagger cards; after that each loops independently
-      var cursor = INIT_DELAY;
-      iconData.forEach(function (data) {
-        loopIcon(data, cursor);
-        cursor += (data.lines.length - 1) * STAGGER + STROKE_DUR + CARD_GAP;
-      });
+      runSequence();
     }, { threshold: 0.2 });
 
     observer.observe(grid);
