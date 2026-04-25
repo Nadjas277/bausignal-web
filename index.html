@@ -474,15 +474,59 @@
     ];
     if (icons.some(function (ic) { return !ic; })) return;
 
-    // Hide all lines by setting dashoffset = totalLength
-    icons.forEach(function (svg) {
-      svg.querySelectorAll('line, path').forEach(function (el) {
+    var STROKE_DUR = 400;
+    var STAGGER    = 150;
+    var PAUSE      = 800;
+    var FADE_OUT   = 300;
+    var CARD_GAP   = 300;
+    var INIT_DELAY = 500;
+
+    // Pre-measure and hide all lines; store length on element for reliable reset
+    var iconData = icons.map(function (svg) {
+      var lines = Array.from(svg.querySelectorAll('line, path'));
+      lines.forEach(function (el) {
         var len = el.getTotalLength ? el.getTotalLength() : 0;
+        el._dashLen = len;
         el.style.strokeDasharray  = len;
         el.style.strokeDashoffset = len;
         el.style.transition = 'none';
       });
+      return { svg: svg, lines: lines };
     });
+
+    function loopIcon(data, startDelay) {
+      var svg          = data.svg;
+      var lines        = data.lines;
+      var drawDuration = (lines.length - 1) * STAGGER + STROKE_DUR;
+
+      setTimeout(function () {
+        // Snap back to fully visible, reset all strokes instantly
+        svg.style.transition = 'none';
+        svg.style.opacity    = '1';
+        lines.forEach(function (el) {
+          el.style.transition       = 'none';
+          el.style.strokeDashoffset = el._dashLen;
+        });
+
+        // Draw strokes one by one
+        lines.forEach(function (el, i) {
+          setTimeout(function () {
+            el.style.transition       = 'stroke-dashoffset ' + STROKE_DUR + 'ms ease-in-out';
+            el.style.strokeDashoffset = '0';
+          }, i * STAGGER);
+        });
+
+        // After all strokes finish: pause → fade out → loop
+        setTimeout(function () {
+          setTimeout(function () {
+            svg.style.transition = 'opacity ' + FADE_OUT + 'ms ease-in-out';
+            svg.style.opacity    = '0';
+            setTimeout(function () { loopIcon(data, 0); }, FADE_OUT);
+          }, PAUSE);
+        }, drawDuration);
+
+      }, startDelay);
+    }
 
     var fired = false;
     var observer = new IntersectionObserver(function (entries) {
@@ -490,24 +534,11 @@
       fired = true;
       observer.disconnect();
 
-      var STROKE_DUR  = 400;  // ms per stroke
-      var STAGGER     = 150;  // ms between strokes within one icon
-      var CARD_GAP    = 300;  // ms between cards
-      var INIT_DELAY  = 500;  // ms before first icon starts
-
+      // First appearance: stagger cards; after that each loops independently
       var cursor = INIT_DELAY;
-
-      icons.forEach(function (svg) {
-        var lines = Array.from(svg.querySelectorAll('line, path'));
-        lines.forEach(function (el, i) {
-          var t = cursor + i * STAGGER;
-          setTimeout(function () {
-            el.style.transition = 'stroke-dashoffset ' + STROKE_DUR + 'ms ease-in-out';
-            el.style.strokeDashoffset = '0';
-          }, t);
-        });
-        // next icon starts after this one's last stroke finishes + CARD_GAP
-        cursor += (lines.length - 1) * STAGGER + STROKE_DUR + CARD_GAP;
+      iconData.forEach(function (data) {
+        loopIcon(data, cursor);
+        cursor += (data.lines.length - 1) * STAGGER + STROKE_DUR + CARD_GAP;
       });
     }, { threshold: 0.2 });
 
