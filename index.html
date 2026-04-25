@@ -18,6 +18,26 @@
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
     <style>#contact-form input::placeholder,#contact-form textarea::placeholder{color:#999;font-family:"DM Sans",sans-serif;}</style>
     <style>
+      /* ── Ticker full-bleed ── */
+      #bs-ticker {
+        margin-left: -16px !important;
+        margin-right: -16px !important;
+        width: calc(100% + 32px) !important;
+      }
+      @media (min-width: 768px) {
+        #bs-ticker {
+          margin-left: -32px !important;
+          margin-right: -32px !important;
+          width: calc(100% + 64px) !important;
+        }
+      }
+      @media (min-width: 1024px) {
+        #bs-ticker {
+          margin-left: -64px !important;
+          margin-right: -64px !important;
+          width: calc(100% + 128px) !important;
+        }
+      }
       /* ── Stats photo section ── */
       #stats-section .stat-line {
         height: 1px;
