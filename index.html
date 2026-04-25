@@ -62,17 +62,19 @@
         #hero-text { padding-top: 84px !important; }
         /* scale headline to fit small screens */
         #hero-text h1 { font-size: clamp(20px, 5.5vw, 26px) !important; }
-        /* show logo on mobile, pin to center-bottom */
+        /* show logo on mobile, perfectly centered horizontally */
         #hero-logo {
           display: flex !important;
           position: absolute !important;
           top: auto !important;
           bottom: 52px !important;
-          left: 50% !important;
-          right: auto !important;
-          transform: translateX(-50%) !important;
-          margin: 0 auto !important;
-          text-align: center !important;
+          left: 0 !important;
+          right: 0 !important;
+          width: -webkit-fit-content !important;
+          width: fit-content !important;
+          margin-left: auto !important;
+          margin-right: auto !important;
+          transform: none !important;
           align-items: center !important;
         }
         #hlo-wordmark { text-align: center !important; }
